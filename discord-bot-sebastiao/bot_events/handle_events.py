@@ -1,5 +1,7 @@
 from typing import Final
 import discord
+import os
+import requests
 from discord import Message
 from discord.ext import commands
 
@@ -43,49 +45,115 @@ def set_events(bot: commands.Bot) -> None:
             if any(pin.author == bot.user and "Atendimento encerrado" in pin.content for pin in pins):
                 return  # ignora thread resolvida
 
+            await thread.send('Solicitação recebida')
+            await thread.edit(locked=True)
+
+            webhook_url = os.getenv("N8N_WEBHOOK_URL")
+
+            if not webhook_url:
+                return
+
             starter_message = await thread.fetch_message(thread.id)
 
             username: str = str(message.author)
             user_message: str = str(message.content)
             channel: str = str(message.channel)
 
-            print('📌 Thread:', thread.name)
-            print('Descrição:', starter_message.content)
-            print('Nova resposta:', user_message)
-            print('Usuário:', username)
+            data = {
+                "message": user_message,
+                "discord": {
+                    "thread_id": str(thread.id),
+                    "channel_id": str(thread.parent_id),
+                    "message_id": str(message.id)
+                },
+                "author": {
+                    "id": str(message.author.id),
+                    "username": message.author.name,
+                    "display_name": message.author.display_name
+                },
+            }
 
-            await thread.edit(locked=True)
-            await thread.send(f'👀 Mensagem recebida, vamos analisar! {message.author.mention}')
+            # Envia para o webhook usando requests
+            try:
+                response = requests.post(webhook_url, json=data, timeout=10)
+
+                if response.status_code == 200:
+                    await thread.send(f'Processando sua solicitação! {message.author.mention}')
+                else:
+                    await thread.send(f'Não foi possível analisar sua pergunta, por favor tente novamente! {message.author.mention}')
+                    await thread.edit(locked=False)
+            except requests.exceptions.Timeout:
+                await thread.send(f'Sua solicitação levou tempo de mais para ser processada, por favor tente novamente! {message.author.mention}')
+                await thread.edit(locked=False)
+            except Exception as e:
+                await thread.send(f'Erro ao inviar sua solicitão, por favor tente novamente! {message.author.mention}')
+                await thread.edit(locked=False)
+
+            # await thread.edit(locked=True)
+            # await thread.send(f'👀 Mensagem recebida, vamos analisar! {message.author.mention}')
+
+            # bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n {message.author.mention}')
+            # await bot_message.add_reaction("✅")
+            # await bot_message.add_reaction("❌")
+
+            # pending_feedback[thread.id] = bot_message.id
+        elif message.channel.id == 1461435767636103262:
+            if message.author != 'n8n#0000'
+                return
+            print('entrou else evento on_message')
+            print('Autor', message.author)
+
+    # @bot.event
+    # async def on_message(message: Message) -> None:
+    #     print(f'autor da mensagem', message.author)
+    #     print(f'bot', bot.user)
+    #     print(message.author == bot.user)
+
+    #     if message.author == bot.user:
+    #         return
+
+    #     if isinstance(message.channel, discord.Thread):
+    #         thread = message.channel
+
+    #         pins = await thread.pins()
+
+    #         if any(pin.author == bot.user and "Atendimento encerrado" in pin.content for pin in pins):
+    #             return  # ignora thread resolvida
+
+    #         starter_message = await thread.fetch_message(thread.id)
+
+    #         username: str = str(message.author)
+    #         user_message: str = str(message.content)
+    #         channel: str = str(message.channel)
+
+    #         await thread.edit(locked=True)
+    #         await thread.send(f'👀 Mensagem recebida, vamos analisar! {message.author.mention}')
+    #         print('MANDOU MENSAGEM DO ON_MESSAGE')
             
-            bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n {message.author.mention}')
-            await bot_message.add_reaction("✅")
-            await bot_message.add_reaction("❌")
+    #         bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n {message.author.mention}')
+    #         await bot_message.add_reaction("✅")
+    #         await bot_message.add_reaction("❌")
 
-            pending_feedback[thread.id] = bot_message.id
+    #         pending_feedback[thread.id] = bot_message.id
 
     @bot.event
-    async def on_thread_create(thread: discord.Thread) -> None:
-        if not isinstance(thread.parent, discord.ForumChannel):
-            return
+    async def on_thread_update(before, after) -> None:
+        print('TRHEAD UPDATE')
+        if before.archived == False and after.archived == True:
+            pins = await after.pins()
 
-        # Mensagem inicial (descrição do post)
-        starter_message = await thread.fetch_message(thread.id)
+            if any(pin.author == bot.user and "Atendimento encerrado" in pin.content for pin in pins):
+                print('JÁ TEM A MENSAGEM FIXADA')
+                return  # ignora thread resolvida
+            
+            resolved_message = await after.send("**Atendimento encerrado**")
+            await resolved_message.pin()
+            await after.edit(archived=True, locked=True)
+            print('post rearquivado')
 
-        author = starter_message.author
-        content = starter_message.content
-
-        print('📄 Post criado')
-        print('Autor:', author)
-        print('Descrição:', content)
-
-        await thread.edit(locked=True)
-        await thread.send(f'👀 Mensagem recebida, vamos analisar! {starter_message.author.mention}')
-        
-        bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n {message.author.mention}')
-        await bot_message.add_reaction("✅")
-        await bot_message.add_reaction("❌")
-
-        pending_feedback[thread.id] = bot_message.id
+            if after.id in pending_feedback:
+                pending_feedback.pop(after.id, None)
+                print('feedback removido da lista')
 
     @bot.event
     async def on_reaction_add(reaction: discord.Reaction, user: discord.User):

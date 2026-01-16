@@ -9,7 +9,6 @@ load_dotenv()
 
 OLIST_BLUE: Final = discord.Color(0x0057dd)
 
-
 def set_commands(bot: commands.Bot) -> None:
     ####################################################################
     # COMANDOS HELP
@@ -108,6 +107,8 @@ def set_commands(bot: commands.Bot) -> None:
         Uso: !ask sua pergunta aqui
         """
         webhook_url = os.getenv("N8N_WEBHOOK_URL")
+
+        print('entrou !ask')
 
         if not webhook_url:
             embed = discord.Embed(
