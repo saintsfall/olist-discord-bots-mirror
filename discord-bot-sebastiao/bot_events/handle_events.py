@@ -14,6 +14,8 @@ ALLOWED_CHANNEL_IDS: Final[list[int]] = [
     1448679548454441044
 ]
 
+WEBHOOK_CHANNEL_ID = 1461435767636103262
+
 # Memória local, perdida ao reiniciar o bot
 pending_feedback: dict[int, int] = {}
 
@@ -34,10 +36,7 @@ def set_events(bot: commands.Bot) -> None:
 
     @bot.event
     async def on_message(message: Message) -> None:
-        if message.author == bot.user:
-            return
-
-        if isinstance(message.channel, discord.Thread):
+        if isinstance(message.channel, discord.Thread) and message.author != bot.user:
             thread = message.channel
 
             pins = await thread.pins()
@@ -73,12 +72,11 @@ def set_events(bot: commands.Bot) -> None:
                 },
             }
 
-            # Envia para o webhook usando requests
             try:
                 response = requests.post(webhook_url, json=data, timeout=10)
 
                 if response.status_code == 200:
-                    await thread.send(f'Processando sua solicitação! {message.author.mention}')
+                    await thread.send(f'Processando sua solicitação!')
                 else:
                     await thread.send(f'Não foi possível analisar sua pergunta, por favor tente novamente! {message.author.mention}')
                     await thread.edit(locked=False)
@@ -89,52 +87,45 @@ def set_events(bot: commands.Bot) -> None:
                 await thread.send(f'Erro ao inviar sua solicitão, por favor tente novamente! {message.author.mention}')
                 await thread.edit(locked=False)
 
-            # await thread.edit(locked=True)
-            # await thread.send(f'👀 Mensagem recebida, vamos analisar! {message.author.mention}')
-
-            # bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n {message.author.mention}')
-            # await bot_message.add_reaction("✅")
-            # await bot_message.add_reaction("❌")
-
-            # pending_feedback[thread.id] = bot_message.id
-        elif message.channel.id == 1461435767636103262:
-            if message.author != 'n8n#0000'
+        elif message.channel.id == WEBHOOK_CHANNEL_ID and message.author == bot.user:
+            if not message.embeds:
                 return
-            print('entrou else evento on_message')
-            print('Autor', message.author)
 
-    # @bot.event
-    # async def on_message(message: Message) -> None:
-    #     print(f'autor da mensagem', message.author)
-    #     print(f'bot', bot.user)
-    #     print(message.author == bot.user)
+            # Armazena os dados recebidos nos embeds da mensagem
+            data = {}
 
-    #     if message.author == bot.user:
-    #         return
+            for embed in message.embeds:
+                for field in embed.fields:
+                    data[field.name] = field.value
 
-    #     if isinstance(message.channel, discord.Thread):
-    #         thread = message.channel
+            if data.get("source") != "n8n":
+                return
 
-    #         pins = await thread.pins()
+            thread_id = data.get("thread_id")
 
-    #         if any(pin.author == bot.user and "Atendimento encerrado" in pin.content for pin in pins):
-    #             return  # ignora thread resolvida
+            if not thread_id:
+                return
 
-    #         starter_message = await thread.fetch_message(thread.id)
+            thread_id = int(thread_id)
 
-    #         username: str = str(message.author)
-    #         user_message: str = str(message.content)
-    #         channel: str = str(message.channel)
+            thread = bot.get_channel(thread_id)
 
-    #         await thread.edit(locked=True)
-    #         await thread.send(f'👀 Mensagem recebida, vamos analisar! {message.author.mention}')
-    #         print('MANDOU MENSAGEM DO ON_MESSAGE')
-            
-    #         bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n {message.author.mention}')
-    #         await bot_message.add_reaction("✅")
-    #         await bot_message.add_reaction("❌")
+            if thread is None:
+                try:
+                    thread = await bot.fetch_channel(thread_id)
+                except Exception as e:
+                    print(f"Erro ao buscar thread {thread_id}: {e}")
+                    return
 
-    #         pending_feedback[thread.id] = bot_message.id
+            if not isinstance(thread, discord.Thread):
+                return
+
+            await thread.send(message.content)
+            bot_message = await thread.send(f'Isso resolveu seu problema?\n ✅ Sim  ❌ Não\n\n')
+            await bot_message.add_reaction("✅")
+            await bot_message.add_reaction("❌")
+
+            pending_feedback[thread.id] = bot_message.id
 
     @bot.event
     async def on_thread_update(before, after) -> None:
