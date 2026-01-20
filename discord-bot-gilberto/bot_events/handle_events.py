@@ -3,8 +3,18 @@ import discord
 from discord import Message
 from discord.ext import commands
 
-# ID do canal onde as solicitação devem ser feitas apenas usando slash commands
-PRE_LAUNCH_MIGRATIONS_CHANNEL_ID: Final[int] = 1461704921693819005
+# IMPORT UTILS TO MANAGE SQLITE3 DATABASE
+from utils import (
+    init_database,
+    cleanup_old_migration_requests,
+    cleanup_old_reindex_requests
+)
+
+# IDs dos canais onde apenas slash commands são permitidos
+SLASH_COMMANDS_ONLY_CHANNELS: Final[list[int]] = [
+    1461704921693819005,  # Pre Launch Migrations (MIGRATION_CHANNEL_ID)
+    1462892195219767431   # Store Reindex (REINDEX_CHANNEL_ID)
+]
 
 
 def set_events(bot: commands.Bot) -> None:
@@ -13,6 +23,13 @@ def set_events(bot: commands.Bot) -> None:
         """
           Evento quando o bot está pronto e conectado
         """
+
+        # Inicializa banco de dados
+        init_database()
+
+        # Limpa solicitações antigas (30 dias atrás)
+        cleanup_old_migration_requests(30)
+        cleanup_old_reindex_requests(30)
 
         print(f'{bot.user.name} está online!')
         print(f'Bot ID: {bot.user.id}')
@@ -43,8 +60,8 @@ def set_events(bot: commands.Bot) -> None:
             await bot.process_commands(message)
             return
 
-        # Valida se a mensagem vem do canal correto
-        if message.channel.id == PRE_LAUNCH_MIGRATIONS_CHANNEL_ID:
+        # Valida se a mensagem vem de um canal que aceita apenas slash commands
+        if message.channel.id in SLASH_COMMANDS_ONLY_CHANNELS:
             # Slash commands não entram como evento de on_message, então todas as mensagens nesse canal devem ser deletadas
             try:
                 # Deleta mensagem
@@ -52,11 +69,12 @@ def set_events(bot: commands.Bot) -> None:
 
                 # Envia aviso - send (comando que envia mensagem) não permite ephemeral
                 await message.channel.send(
-                    f"{message.author.mention} Ainda não tenho a mensagem correta aqui..."
-                    f"Mensagens de texto não são permitidas neste canal.",
+                    f"{message.author.mention} Este canal funciona somente com slash commands (/). "
+                    f"Mensagens de texto não são permitidas neste canal. "
+                    f"Caso tenha dúvidas utilize `/ajuda` para obter mais informações",
                     delete_after=5  # Deleta após 5 segundos
                 )
-            except discord.erros.NotFound:
+            except discord.errors.NotFound:
                 # Mensagem já foi deletada por algum outro processo
                 print(
                     'Mensagem não encontrada, possivelmente já a mensagem já foi deletada')
