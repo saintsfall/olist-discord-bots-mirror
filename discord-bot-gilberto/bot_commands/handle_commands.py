@@ -220,8 +220,22 @@ def set_commands(bot: commands.Bot) -> None:
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @bot.tree.command(name='response_migration', description='Responde a uma solicitação de migração (apenas moderadores)')
-    @app_commands.describe(request_id="ID da solicitação", resposta="Sua resposta para o usuário")
-    async def response_migration(interaction: discord.Interaction, request_id: str, resposta: str,) -> None:
+    @app_commands.describe(
+        request_id="ID da solicitação",
+        resposta="Sua resposta para o usuário",
+        status="Status da solicitação"
+    )
+    @app_commands.choices(status=[
+        app_commands.Choice(name="Pendente", value="pending"),
+        app_commands.Choice(name="OK", value="ok"),
+        app_commands.Choice(name="Revisar", value="review")
+    ])
+    async def response_migration(
+        interaction: discord.Interaction,
+        request_id: str,
+        resposta: str,
+        status: app_commands.Choice[str]
+    ) -> None:
         """
           Comando para moderadores responderem a solicitação
           Requer permissão de moderador
@@ -246,9 +260,11 @@ def set_commands(bot: commands.Bot) -> None:
             return
 
         # Moderadores respondem as requests já concluidas
-        if update_response(request_id, resposta):
+        status_value = status.value if isinstance(
+            status, app_commands.Choice) else status
+        if update_response(request_id, resposta, status_value):
             await interaction.response.send_message(
-                f"Resposta registrada para solicitação {request_id}",
+                f"Resposta registrada para solicitação {request_id} com status '{status_value}'",
                 ephemeral=True
             )
         else:
@@ -507,8 +523,22 @@ def set_commands(bot: commands.Bot) -> None:
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @bot.tree.command(name='response_reindex', description='Responde a uma solicitação de reindex (apenas moderadores)')
-    @app_commands.describe(request_id="ID da solicitação", resposta="Sua resposta para o usuário")
-    async def response_reindex(interaction: discord.Interaction, request_id: str, resposta: str) -> None:
+    @app_commands.describe(
+        request_id="ID da solicitação",
+        resposta="Sua resposta para o usuário",
+        status="Status da solicitação"
+    )
+    @app_commands.choices(status=[
+        app_commands.Choice(name="Pending", value="pending"),
+        app_commands.Choice(name="OK", value="ok"),
+        app_commands.Choice(name="Review", value="review")
+    ])
+    async def response_reindex(
+        interaction: discord.Interaction,
+        request_id: str,
+        resposta: str,
+        status: app_commands.Choice[str]
+    ) -> None:
         """
           Comando para moderadores responderem solicitações de reindex
           Requer permissão de moderador
@@ -533,9 +563,11 @@ def set_commands(bot: commands.Bot) -> None:
             return
 
         # Moderadores respondem as requests de reindex
-        if update_reindex_response(request_id, resposta):
+        status_value = status.value if isinstance(
+            status, app_commands.Choice) else status
+        if update_reindex_response(request_id, resposta, status_value):
             await interaction.response.send_message(
-                f"Resposta registrada para solicitação de reindex {request_id}",
+                f"Resposta registrada para solicitação de reindex {request_id} com status '{status_value}'",
                 ephemeral=True
             )
         else:
