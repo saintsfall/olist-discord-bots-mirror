@@ -1,0 +1,5 @@
+DISPLAY_NAME=gilberto-bot
+DESCRIPTION=discord bot gilberto
+MAIN=main.py
+MEMORY=384
+VERSION=LATEST

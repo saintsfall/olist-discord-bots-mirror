@@ -1,0 +1,5 @@
+DISPLAY_NAME=sebastiao-bot
+DESCRIPTION=discord bot sebastiao
+MAIN=main.py
+MEMORY=384
+VERSION=LATEST
