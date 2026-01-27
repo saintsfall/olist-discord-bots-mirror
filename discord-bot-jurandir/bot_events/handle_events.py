@@ -14,9 +14,17 @@ def set_events(bot: commands.Bot) -> None:
         print(f'{bot.user.name} está online!')
         print(f'Bot ID: {bot.user.id}')
 
+        # Sincroniza os slash commands com o Discord
+        try:
+            synced = await bot.tree.sync()
+            print(f'Sincronizados {len(synced)} comandos.')
+
+        except Exception as e:
+            print(f'Erro ao sincronizar os comandos: {e}')
+
         # Define status do bot
         await bot.change_presence(
-            activity=discord.Game(name="!jurandir para ajuda"),
+            activity=discord.Game(name="Use /ajuda para ajuda"),
             status=discord.Status.online
         )
 

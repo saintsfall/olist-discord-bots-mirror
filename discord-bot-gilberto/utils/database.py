@@ -198,40 +198,6 @@ def save_request(request_id: str, user_id: int, message: str) -> bool:
         return False
 
 
-def cleanup_old_migration_requests(days: int = 30) -> int:
-    """
-      Remove solicitações antigas do banco de dados.
-
-      Args:
-          days: Número de dias para considerar uma solicitação como "antiga"
-
-      Returns:
-          Número de solicitações removidas
-    """
-    try:
-        with get_connection() as conn:
-            cursor = conn.execute(
-                """
-              DELETE FROM migration_requests
-              WHERE status = 'ok'
-              AND answered_at < julianday('now', '-' || ? || ' days')
-            """,
-                (days,)
-            )
-
-            deleted = cursor.rowcount
-
-            if deleted > 0:
-                print(
-                    f"[DATABASE] Limpeza: removidas {deleted} solicitações antigas")
-
-            return deleted
-
-    except Exception as e:
-        print(f"[DATABASE ERROR] Erro na limpeza: {e}")
-        return 0
-
-
 def get_pending_requests_count() -> int:
     """
       Retorna o número de solicitações pendentes.
@@ -293,6 +259,65 @@ def update_response(request_id: str, response: str, status: str = 'ok') -> bool:
     except Exception as e:
         print(f"[DATABASE ERROR] Erro ao atualizar resposta: {e}")
         return False
+
+
+def cleanup_old_migration_requests(days: int = 30, status_list: list[str] = None) -> int:
+    """
+      Remove solicitações antigas do banco de dados.
+
+      Args:
+          days: Número de dias para considerar uma solicitação como "antiga".
+          status_list: Lista de status para filtrar. Se contem "ALL", remove todos.
+                       Se None ou vazio, usa OK como padrão para compatibilidade.
+
+      Returns:
+          Número de solicitações removidas
+    """
+
+    if status_list is None or len(status_list) == 0:
+        status_list = ['ok']
+
+    try:
+        with get_connection() as conn:
+            # Se "ALL" remove todos independente do status
+            if 'ALL' in status_list:
+                query = """
+                    DELETE FROM migration_requests
+                    WHERE (
+                        (answered_at IS NOT NULL AND answered_at < julianday('now', '-' || ? || ' days'))
+                        OR
+                        (answered_at IS NULL AND created_at < julianday('now', '-' || ? || ' days' ))
+                    )
+                """
+                cursor = conn.execute(query, (days, days))
+            else:
+                # Remove apenas registros com os status fornecidos
+                placeholders = ','.join(['?' for _ in status_list])
+
+                query = f"""
+                    DELETE FROM migration_requests
+                    WHERE status IN ({placeholders})
+                    AND (
+                        (answered_at IS NOT NULL AND answered_at < julianday('now', '-' || ? || ' days'))
+                        OR
+                        (answered_at IS NULL AND created_at < julianday('now', '-' || ? || ' days'))
+                    )
+                """
+                cursor = conn.execute(query, (*status_list, days, days))
+
+            deleted = cursor.rowcount
+
+            if deleted > 0:
+                status_str = "ALL" if "ALL" in status_list else ", ".join(
+                    status_list)
+                print(
+                    f"[DATABASE] Limpeza: removidas {deleted} solicitações antigas (status: {status_str})")
+
+            return deleted
+
+    except Exception as e:
+        print(f"[DATABASE ERROR] Erro na limpeza: {e}")
+        return 0
 
 
 # ============================================================================
@@ -475,32 +500,57 @@ def update_reindex_response(request_id: str, response: str, status: str = 'ok') 
         return False
 
 
-def cleanup_old_reindex_requests(days: int = 30) -> int:
+def cleanup_old_reindex_requests(days: int = 30, status_list: list[str] = None) -> int:
     """
       Remove solicitações de reindex antigas do banco de dados.
 
       Args:
           days: Número de dias para considerar uma solicitação como "antiga"
+          status_list: Lista de status para filtrar. Se contém "ALL", remove todos independente do status.
+                      Se None ou vazio, usa ['ok'] como padrão para compatibilidade.
 
       Returns:
           Número de solicitações removidas
     """
+
+    if status_list is None or len(status_list) == 0:
+        # Padrão para compatibilidade com código existente
+        status_list = ['ok']
+
     try:
         with get_connection() as conn:
-            cursor = conn.execute(
-                """
+            # Se "ALL" está na lista, remove todos independente do status
+            if "ALL" in status_list:
+                query = """
                   DELETE FROM reindex_requests
-                  WHERE status = 'ok'
-                  AND answered_at < julianday('now', '-' || ? || ' days')
-                """,
-                (days,)
-            )
+                  WHERE (
+                    (answered_at IS NOT NULL AND answered_at < julianday('now', '-' || ? || ' days'))
+                    OR
+                    (answered_at IS NULL AND created_at < julianday('now', '-' || ? || ' days'))
+                  )
+                """
+                cursor = conn.execute(query, (days, days))
+            else:
+                # Remove apenas registros com os status especificados
+                placeholders = ','.join(['?' for _ in status_list])
+                query = f"""
+                  DELETE FROM reindex_requests
+                  WHERE status IN ({placeholders})
+                  AND (
+                    (answered_at IS NOT NULL AND answered_at < julianday('now', '-' || ? || ' days'))
+                    OR
+                    (answered_at IS NULL AND created_at < julianday('now', '-' || ? || ' days'))
+                  )
+                """
+                cursor = conn.execute(query, (*status_list, days, days))
 
             deleted = cursor.rowcount
 
             if deleted > 0:
+                status_str = "ALL" if "ALL" in status_list else ", ".join(
+                    status_list)
                 print(
-                    f"[DATABASE] Limpeza: removidas {deleted} solicitações de reindex antigas")
+                    f"[DATABASE] Limpeza: removidas {deleted} solicitações de reindex antigas (status: {status_str})")
 
             return deleted
 
