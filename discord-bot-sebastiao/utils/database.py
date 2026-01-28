@@ -187,32 +187,78 @@ def close_thread(thread_id: str) -> bool:
         print(f"[DATABASE ERROR] Erro ao fechar a thread: {e}")
         return False
 
-def cleanup_old_threads(days: int = 30) -> int:
+def cleanup_old_threads(days: int = 30, status_list: list[str] = None) -> int:
     """
       Remove threads antigas do banco de dados.
 
       Args:
           days: Número de dias para considerar uma thread como "antiga"
+          status_list: Lista de status para filtrar. Se contém "ALL", remove todos independente do status.
+                      Se None ou vazio, usa ['closed'] como padrão para compatibilidade.
 
       Returns:
           Número de threads removidas
     """
+    if status_list is None or len(status_list) == 0:
+        status_list = ['closed']  # Padrão para compatibilidade com código existente
+
     try:
         with get_connection() as conn:
-            cursor = conn.execute(
+            # Se "ALL" está na lista, remove todos independente do status
+            if "ALL" in status_list:
+                query = """
+                  DELETE FROM threads
+                  WHERE (
+                    (status = 'closed' AND closed_at IS NOT NULL AND closed_at < julianday('now', '-' || ? || ' days'))
+                    OR
+                    (status IN ('pending', 'pending_support') AND closed_at IS NULL)
+                  )
                 """
-              DELETE FROM threads
-              WHERE status = 'closed'
-              AND closed_at < julianday('now', '-' || ? || ' days')
-            """,
-                (days,)
-            )
+                cursor = conn.execute(query, (days,))
+            else:
+                # Remove apenas registros com os status especificados
+                placeholders = ','.join(['?' for _ in status_list])
+                
+                # Para status 'closed', filtra por closed_at
+                # Para outros status (pending, pending_support), remove todas (não têm closed_at)
+                if 'closed' in status_list and len(status_list) == 1:
+                    # Apenas closed: filtra por closed_at
+                    query = f"""
+                      DELETE FROM threads
+                      WHERE status = 'closed'
+                      AND closed_at IS NOT NULL
+                      AND closed_at < julianday('now', '-' || ? || ' days')
+                    """
+                    cursor = conn.execute(query, (days,))
+                elif 'closed' not in status_list:
+                    # Apenas pending/pending_support: remove todas (não têm closed_at)
+                    query = f"""
+                      DELETE FROM threads
+                      WHERE status IN ({placeholders})
+                      AND closed_at IS NULL
+                    """
+                    cursor = conn.execute(query, status_list)
+                else:
+                    # Mistura: closed com filtro de dias, outros sem filtro
+                    pending_statuses = [s for s in status_list if s != 'closed']
+                    pending_placeholders = ','.join(['?' for _ in pending_statuses])
+                    
+                    query = f"""
+                      DELETE FROM threads
+                      WHERE (
+                        (status = 'closed' AND closed_at IS NOT NULL AND closed_at < julianday('now', '-' || ? || ' days'))
+                        OR
+                        (status IN ({pending_placeholders}) AND closed_at IS NULL)
+                      )
+                    """
+                    cursor = conn.execute(query, (days, *pending_statuses))
 
             deleted = cursor.rowcount
 
             if deleted > 0:
+                status_str = "ALL" if "ALL" in status_list else ", ".join(status_list)
                 print(
-                    f"[DATABASE] Limpeza: removidas {deleted} threads antigas")
+                    f"[DATABASE] Limpeza: removidas {deleted} threads antigas (status: {status_str})")
 
             return deleted
 

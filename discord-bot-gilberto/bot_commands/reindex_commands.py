@@ -320,7 +320,7 @@ def register_reindex_commands(bot: commands.Bot) -> None:
                 ephemeral=True
             )
 
-    @bot.tree.command(name='limpar_reindex', description='Remove registros antigos de reindex da base de dados (apenas moderadores)')
+    @bot.tree.command(name='clear_reindex', description='Remove registros antigos de reindex da base de dados (apenas moderadores)')
     @app_commands.describe(
         status="Status dos registros a serem removidos",
         dias="Número de dias para considerar registros como antigos (padrão: 30)"
@@ -331,7 +331,7 @@ def register_reindex_commands(bot: commands.Bot) -> None:
         app_commands.Choice(name="Review", value="review"),
         app_commands.Choice(name="Todos (ALL)", value="ALL")
     ])
-    async def limpar_reindex(
+    async def clear_reindex(
         interaction: discord.Interaction,
         status: app_commands.Choice[str],
         dias: int = 30
@@ -373,7 +373,8 @@ def register_reindex_commands(bot: commands.Bot) -> None:
         status_list = [status_value]
 
         # Executa a limpeza
-        deleted = cleanup_old_reindex_requests(days=dias, status_list=status_list)
+        deleted = cleanup_old_reindex_requests(
+            days=dias, status_list=status_list)
 
         # Cria embed com resultado
         status_display = "Todos" if status_value == "ALL" else status.name

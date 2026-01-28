@@ -15,17 +15,11 @@ from utils.database import (
     cleanup_old_threads,
     init_database
 )
+from bot_events.constants import (
+    WEBHOOK_CHANNEL_ID,
+    SUPPORT_CHANNEL_ID
+)
 
-# Lista dos canais permitidos (ID)
-ALLOWED_CHANNEL_IDS: Final[list[int]] = [
-    1451223826862968902,
-    1448786609603608677,
-    1448679548454441044,
-    1463970153753608347
-]
-
-WEBHOOK_CHANNEL_ID = 1461435767636103262
-SUPPORT_CHANNEL_ID = 1463970153753608347
 
 def set_events(bot: commands.Bot) -> None:
     @bot.event
@@ -39,13 +33,21 @@ def set_events(bot: commands.Bot) -> None:
 
         # Limpa solicitações antigas (30 dias atrás)
         cleanup_old_threads(30)
-        
+
         print(f'{bot.user.name} está online!')
         print(f'Bot ID: {bot.user.id}')
 
+        # Sincroniza os slash commands com o Discord
+        try:
+            synced = await bot.tree.sync()
+            print(f'Sincronizados {len(synced)} comandos.')
+
+        except Exception as e:
+            print(f'Erro ao sincronizar os comandos: {e}')
+
         # Define status do bot
         await bot.change_presence(
-            activity=discord.Game(name="!sebastiao para ajuda"),
+            activity=discord.Game(name='Use /ajuda para ver os comandos'),
             status=discord.Status.online
         )
 
@@ -57,7 +59,7 @@ def set_events(bot: commands.Bot) -> None:
             thread_db = get_thread(thread.id)
 
             if thread_db and (thread_db["status"] == 'closed' or thread_db["status"] == 'pending_support'):
-                return #ignora threads fechadas ou aguardando contato
+                return  # ignora threads fechadas ou aguardando contato
 
             # Thread fica bloqueada até o bot responder. Evita solicitações fora de ordem
             await thread.send('Solicitação recebida')
@@ -118,12 +120,12 @@ def set_events(bot: commands.Bot) -> None:
                     data[field.name] = field.value
 
             if data.get("source") != "n8n":
-                return #Ignora mensagens de fontes que não sejam o n8n
+                return  # Ignora mensagens de fontes que não sejam o n8n
 
             thread_id = data.get("thread_id")
 
             if not thread_id:
-                return #Ignora mensagens sem thread_id nos embeds
+                return  # Ignora mensagens sem thread_id nos embeds
 
             thread_id = int(thread_id)
 
@@ -144,7 +146,7 @@ def set_events(bot: commands.Bot) -> None:
             thread_db = get_thread(thread.id)
 
             if thread_db and (thread_db["status"] == "closed" or thread_db["status"] == "pending_support"):
-                return #ignora threads fechadas ou aguardando contato
+                return  # ignora threads fechadas ou aguardando contato
 
             # Verifica se a mensagem foi bloqueada pelo guardrails
             event_type = data.get("event_type")
@@ -185,7 +187,7 @@ def set_events(bot: commands.Bot) -> None:
             if not any(pin.author == bot.user and "Atendimento encerrado" in pin.content for pin in pins):
                 resolved_message = await after.send("**Atendimento encerrado**")
                 await resolved_message.pin()
-            
+
             await after.edit(archived=True, locked=True)
 
             thread_db = get_thread(after.id)
@@ -219,7 +221,7 @@ def set_events(bot: commands.Bot) -> None:
             return
 
         if thread_db["status"] == 'closed' or message.id != thread_db["message_id"]:
-            return #ignora threads fechadas ou reação em mensagens diferentes
+            return  # ignora threads fechadas ou reação em mensagens diferentes
 
         # Só aceita emojis válidos
         if str(reaction.emoji) not in ("✅", "❌", "💬"):
@@ -231,14 +233,15 @@ def set_events(bot: commands.Bot) -> None:
             await resolved_message.pin()
             close_thread(thread.id)
 
-        #Reabre a thread, para que o usuário possa responder
+        # Reabre a thread, para que o usuário possa responder
         elif str(reaction.emoji) == "❌":
             await thread.send("Ok 👍 Pode mandar mais detalhes que continuo te ajudando.")
             await thread.edit(locked=False)
 
         elif str(reaction.emoji) == "💬":
             await thread.send("Ok 👍 Vou sinalizar a equipe sobre o seu caso.")
-            update_thread(thread.id, thread_db["message_id"], "pending_support")
+            update_thread(
+                thread.id, thread_db["message_id"], "pending_support")
             channel = bot.get_channel(SUPPORT_CHANNEL_ID)
 
             if channel is None:
@@ -261,7 +264,7 @@ def set_events(bot: commands.Bot) -> None:
 
     @bot.event
     async def on_thread_delete(thread: discord.Thread):
-        #Evento para remover do banco as threads que forem deletadas manualmente
+        # Evento para remover do banco as threads que forem deletadas manualmente
         thread_db = get_thread(thread.id)
 
         if not thread_db:

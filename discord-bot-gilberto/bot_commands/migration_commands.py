@@ -316,7 +316,7 @@ def register_migration_commands(bot: commands.Bot) -> None:
                 ephemeral=True
             )
 
-    @bot.tree.command(name='limpar_migracoes', description='Remove registros antigos de migração da base de dados (apenas moderadores)')
+    @bot.tree.command(name='clear_migrations', description='Remove registros antigos de migração da base de dados (apenas moderadores)')
     @app_commands.describe(
         status="Status dos registros a serem removidos",
         dias="Número de dias para considerar registros como antigos (padrão: 30)"
@@ -327,7 +327,7 @@ def register_migration_commands(bot: commands.Bot) -> None:
         app_commands.Choice(name="Revisar", value="review"),
         app_commands.Choice(name="Todos (ALL)", value="ALL")
     ])
-    async def limpar_migracoes(
+    async def clear_migrations(
         interaction: discord.Interaction,
         status: app_commands.Choice[str],
         dias: int = 30
@@ -369,7 +369,8 @@ def register_migration_commands(bot: commands.Bot) -> None:
         status_list = [status_value]
 
         # Executa a limpeza
-        deleted = cleanup_old_migration_requests(days=dias, status_list=status_list)
+        deleted = cleanup_old_migration_requests(
+            days=dias, status_list=status_list)
 
         # Cria embed com resultado
         status_display = "Todos" if status_value == "ALL" else status.name
