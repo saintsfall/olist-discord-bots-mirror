@@ -39,8 +39,8 @@ Isso irá:
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-N8N_WEBHOOK_URL=https://n8n.olist.com/webhook-test/6339c5c5-e5df-4c85-8e09-450e3e6dcb82
-DISCORD_WEBHOOK=https://discord.com/api/webhooks/1448365221843570730/57re8i_JSjb_L_5fy3L4N8hTfodWLMqA61KtXjWL_cDqmQuhOIX3qlfFIEu2hv8VKiII
+N8N_WEBHOOK_URL=seu-webhook-n8n-aqui
+DISCORD_WEBHOOK=seu-webhook-discord-aqui
 
 DISCORD_TOKEN=seu-token-discord-aqui # Sebastião Bot
 ```
