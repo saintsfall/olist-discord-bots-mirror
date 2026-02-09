@@ -1,0 +1,14 @@
+[project]
+name = "discord-bot-sebastiao"
+version = "1.0.0"
+description = "Discord bot for managing roles and partners"
+requires-python = ">=3.10"
+dependencies = [
+    "discord.py>=2.3.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.32.5",
+]
+
+[project.optional-dependencies]
+dev = []
+

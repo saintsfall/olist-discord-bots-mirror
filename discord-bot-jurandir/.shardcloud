@@ -1,0 +1,5 @@
+DISPLAY_NAME=jurandir-bot
+DESCRIPTION=discord bot jurandir
+MAIN=main.py
+MEMORY=384
+VERSION=LATEST
