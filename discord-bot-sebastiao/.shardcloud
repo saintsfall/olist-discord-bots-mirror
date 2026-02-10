@@ -1,5 +1,5 @@
-DISPLAY_NAME=sebastiao-bot
-DESCRIPTION=discord bot sebastiao
+DISPLAY_NAME=bot-request-reindex-assistant
+DESCRIPTION=discord bot request reindex assistant
 MAIN=main.py
 MEMORY=384
 VERSION=LATEST

@@ -1,5 +1,5 @@
-DISPLAY_NAME=jurandir-bot
-DESCRIPTION=discord bot jurandir
+DISPLAY_NAME=bot-roles-assistant
+DESCRIPTION=discord bot roles assistant
 MAIN=main.py
 MEMORY=384
 VERSION=LATEST

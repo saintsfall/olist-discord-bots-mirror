@@ -1,5 +1,5 @@
-DISPLAY_NAME=gilberto-bot
-DESCRIPTION=discord bot gilberto
+DISPLAY_NAME=bot-ai-assistant
+DESCRIPTION=discord bot ai assistant
 MAIN=main.py
 MEMORY=384
 VERSION=LATEST
