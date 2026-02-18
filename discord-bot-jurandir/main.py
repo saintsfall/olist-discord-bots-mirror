@@ -37,10 +37,11 @@ bot: commands.Bot = commands.Bot(
 handle_roles.set_commands(bot)
 handle_events.set_events(bot)
 
-# STEP 3    : MAIN ENTRY POINT
+# STEP 3: MAIN ENTRY POINT
 
 
 def main() -> None:
+    print(f'Testing shard cloud integration with github')
     bot.run(token=TOKEN, log_handler=handler, log_level=logging.DEBUG)
 
 
