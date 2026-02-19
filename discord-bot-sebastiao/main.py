@@ -21,7 +21,7 @@ project_root = Path(__file__).parent
 log_file_path = project_root / 'discord.log'
 
 handler = logging.FileHandler(
-    filename=str(log_file_path), encoding='utf-8', mode='w')
+    filename=str(log_file_path), encoding='utf-8', mode='a')
 
 # STEP 1: BOT SETUP
 intents: Intents = Intents.default()
@@ -34,7 +34,7 @@ bot: commands.Bot = commands.Bot(
 )
 
 # STEP 2: SETUP EVENTS AND COMMANDS
-handle_events.set_events(bot)
+handle_events.set_events(bot, log_file_path=log_file_path)
 handle_questions.set_commands(bot)
 
 # STEP 3: MAIN ENTRY POINT

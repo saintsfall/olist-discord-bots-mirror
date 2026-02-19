@@ -1,11 +1,14 @@
-from typing import Final
+import asyncio
+import io
+import logging
+from pathlib import Path
+
 import discord
 import os
 import requests
 from discord import Message
 from discord.ext import commands
 
-from utils.utils import send_message
 from utils.database import (
     save_thread,
     update_thread,
@@ -21,7 +24,29 @@ from bot_events.constants import (
 )
 
 
-def set_events(bot: commands.Bot) -> None:
+def set_events(bot: commands.Bot, *, log_file_path: Path | None = None) -> None:
+    async def _log_clear_loop() -> None:
+        """
+            A cada 8 horas trunca o discord.log e troca o FileHandler do logger.
+        """
+        path_str = str(log_file_path)
+        logger = logging.getLogger("discord")
+        while True:
+            await asyncio.sleep(8 * 3600)  # 8 horas
+            try:
+                for h in list(logger.handlers):
+                    if isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == path_str:
+                        logger.removeHandler(h)
+                        h.close()
+                        break
+                with open(log_file_path, "w", encoding="utf-8"):
+                    pass
+                new_handler = logging.FileHandler(
+                    filename=path_str, encoding="utf-8", mode="a")
+                logger.addHandler(new_handler)
+            except Exception as e:
+                print(f"Erro ao limpar log: {e}")
+
     @bot.event
     async def on_ready() -> None:
         """
@@ -50,6 +75,10 @@ def set_events(bot: commands.Bot) -> None:
             activity=discord.Game(name='Use /ajuda para ver os comandos'),
             status=discord.Status.online
         )
+
+        # Inicia tarefa que limpa o arquivo de log a cada 8 horas
+        if log_file_path is not None:
+            asyncio.create_task(_log_clear_loop())
 
     @bot.event
     async def on_message(message: Message) -> None:
@@ -161,7 +190,31 @@ def set_events(bot: commands.Bot) -> None:
             if thread_db and thread_db["iteration_count"] >= 2:
                 bot_message = 'Isso resolveu seu problema?\n ✅ Sim  ❌ Não  💬 Preciso de ajuda\n\n'
 
-            await thread.send(message.content)
+            # Envia conteúdo e, se houver, o único anexo (resposta completa) reenviado como .md
+            files_to_send = []
+            if message.attachments:
+                attachment = message.attachments[0]
+                try:
+                    response = await asyncio.to_thread(
+                        requests.get, attachment.url, timeout=30
+                    )
+                    response.raise_for_status()
+                    filename = attachment.filename
+                    if filename.endswith(".txt"):
+                        filename = filename[:-4] + ".md"
+                    files_to_send = [
+                        discord.File(
+                            fp=io.BytesIO(response.content),
+                            filename=filename,
+                        )
+                    ]
+                except Exception as e:
+                    print(f"Erro ao baixar anexo para thread {thread.id}: {e}")
+
+            if files_to_send:
+                await thread.send(content=message.content, files=files_to_send)
+            else:
+                await thread.send(message.content)
             bot_message = await thread.send(bot_message)
             await bot_message.add_reaction("✅")
             await bot_message.add_reaction("❌")

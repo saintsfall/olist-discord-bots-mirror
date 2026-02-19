@@ -106,6 +106,8 @@ def delete_thread(thread_id: str) -> bool:
 def save_thread(thread_id: str, user_id: int, message_id: int) -> bool:
     """
       Salva uma nova thread no banco de dados.
+      Se a thread já existir (ex.: processamento duplicado do webhook), atualiza
+      message_id e iteration_count em vez de falhar com UNIQUE.
 
       Args:
         thread_id: ID único da thread
@@ -113,14 +115,23 @@ def save_thread(thread_id: str, user_id: int, message_id: int) -> bool:
         message_id: ID da mensagem aguardando reação
 
       Returns:
-        True se salvou com sucesso, False caso contrário
+        True se salvou ou atualizou com sucesso, False caso contrário
     """
     try:
         with get_connection() as conn:
-            conn.execute(
-                "INSERT INTO threads (thread_id, user_id, message_id, iteration_count, status, closed_at) VALUES (?, ?, ?, 0, 'pending', NULL)",
-                (thread_id, user_id, message_id)
+            cursor = conn.execute(
+                """INSERT OR IGNORE INTO threads
+                   (thread_id, user_id, message_id, iteration_count, status, closed_at)
+                   VALUES (?, ?, ?, 0, 'pending', NULL)""",
+                (str(thread_id), user_id, message_id),
             )
+            if cursor.rowcount == 0:
+                conn.execute(
+                    """UPDATE threads
+                       SET message_id = ?, iteration_count = iteration_count + 1, status = 'pending'
+                       WHERE thread_id = ?""",
+                    (message_id, str(thread_id)),
+                )
         return True
 
     except Exception as e:
