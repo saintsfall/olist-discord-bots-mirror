@@ -1,0 +1,18 @@
+[project]
+name = "vnda-docs-mcp-server"
+version = "0.1.0"
+description = "MCP Server que expõe tools de acesso à documentação developers.vnda.com.br (Opção A: fetch direto ao site)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.0",
+    "requests>=2.28",
+    "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
