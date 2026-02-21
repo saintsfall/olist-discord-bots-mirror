@@ -6,7 +6,7 @@ import re
 from typing import Any
 from urllib.parse import urljoin
 
-from vnda_docs_mcp_server.tools.doc_fetcher import (
+from olist_docs_mcp_server.tools.doc_fetcher import (
     BASE_URL,
     fetch_page_text,
     get_doc_sections,
@@ -65,9 +65,9 @@ def list_docs_sections() -> list[dict[str, Any]]:
     ]
 
 
-def get_vnda_docs_context(query: str, max_pages: int = 5) -> list[dict[str, Any]]:
+def get_olist_docs_context(query: str, max_pages: int = 5) -> list[dict[str, Any]]:
     """
-        Busca contexto na documentação Vnda para responder à pergunta.
+        Busca contexto na documentação Olist para responder à pergunta.
         Faz fetch direto ao site developers.vnda.com.br, extrai texto das páginas
         relevantes e retorna snippets com URL de fonte. Resposta apenas com esse contexto.
         (Equivalente ao Get Context do Context7.)
@@ -178,4 +178,4 @@ def register_tools(mcp) -> None:
         Registra as tools no FastMCP.
     """
     mcp.tool()(list_docs_sections)
-    mcp.tool()(get_vnda_docs_context)
+    mcp.tool()(get_olist_docs_context)

@@ -23,8 +23,8 @@ OPENAI_TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "get_vnda_docs_context",
-            "description": "Busca contexto na documentação Vnda para responder à pergunta. Retorna snippets com URL de fonte. Use antes de responder.",
+            "name": "get_olist_docs_context",
+            "description": "Busca contexto na documentação Olist para responder à pergunta. Retorna snippets com URL de fonte. Use antes de responder.",
             "parameters": {
                 "type": "object",
                 "properties": {

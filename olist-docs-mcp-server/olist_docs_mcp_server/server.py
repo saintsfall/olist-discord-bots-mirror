@@ -3,7 +3,7 @@
 """
 from mcp.server.fastmcp import FastMCP
 
-from vnda_docs_mcp_server.tools import register_tools
+from olist_docs_mcp_server.tools import register_tools
 
 mcp = FastMCP(
     "Olist Docs",

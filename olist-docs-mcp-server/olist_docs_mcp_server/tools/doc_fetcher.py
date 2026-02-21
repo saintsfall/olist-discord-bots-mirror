@@ -163,7 +163,7 @@ def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str]:
     full_url = url if url.startswith("http") else urljoin(BASE_URL, url)
 
     resp = requests.get(full_url, timeout=timeout, headers={
-                        "User-Agent": "VndaDocsMCP/1.0"})
+                        "User-Agent": "OlistDocsMCP/1.0"})
 
     resp.raise_for_status()
 
@@ -188,44 +188,108 @@ def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str]:
     return text, full_url
 
 
+# Padrões que indicam trecho de código (evita fragmentar blocos de código)
+_CODE_LIKE_PATTERNS = (
+    "import ",
+    "from ",
+    "const ",
+    "let ",
+    "var ",
+    "function ",
+    "=>",
+    "export ",
+    "return ",
+    "  };",
+    "  },",
+    "} else {",
+    "} catch ",
+    "{% ",
+    "{{ ",
+    "<div ",
+    "<form ",
+    "<input ",
+)
+
+
+def _looks_like_code(paragraph: str) -> bool:
+    """Retorna True se o parágrafo parece ser código."""
+    stripped = paragraph.strip()
+    if len(stripped) < 15:
+        return False
+    # Linhas tipicamente indentadas (2+ espaços) ou que começam com padrões de código
+    first_line = stripped.split("\n")[0][:60]
+    return any(pat in first_line or pat in stripped[:200] for pat in _CODE_LIKE_PATTERNS)
+
+
 def relevant_sections(text: str, query: str, max_chars: int = 12000) -> str:
     """
-        Filtra trechos que contenham termos da query e limita tamanho.
+    Filtra trechos que contenham termos da query e limita tamanho.
+    Preserva blocos de código inteiros (evita retornar apenas import/export sem o corpo).
     """
 
     query_lower = query.lower()
-
     terms = [t.strip() for t in query_lower.split() if len(t.strip()) > 2]
 
     if not terms:
         return text[:max_chars] + ("..." if len(text) > max_chars else "")
 
     paragraphs = text.split("\n\n")
-    scored = []
+    # Agrupa parágrafos consecutivos que parecem código em blocos (evita fragmentar)
+    blocks: list[str] = []
+    current_block: list[str] = []
 
     for p in paragraphs:
-        if len(p.strip()) < 20:
+        if len(p.strip()) < 15:
+            if current_block:
+                blocks.append("\n\n".join(current_block))
+                current_block = []
             continue
 
-        pl = p.lower()
+        if _looks_like_code(p):
+            current_block.append(p)
+        else:
+            if current_block:
+                blocks.append("\n\n".join(current_block))
+                current_block = []
+            blocks.append(p)
 
-        score = sum(1 for t in terms if t in pl)
+    if current_block:
+        blocks.append("\n\n".join(current_block))
 
+    scored = []
+    for block in blocks:
+        block_lower = block.lower()
+        score = sum(1 for t in terms if t in block_lower)
+        scored.append((score, block))
+
+    # Inclui blocos com score > 0; para blocos de código com score 0, inclui se
+    # a query mencionar "código"/"code"/"trecho" (usuário quer ver código)
+    code_terms = {"código", "codigo", "code", "trecho", "trechos", "exemplo"}
+    query_words = set(query_lower.split())
+    wants_code = bool(query_words & code_terms)
+
+    # Ordena: primeiro por score (maior primeiro), depois blocos de código antes de prosa
+    def sort_key(item: tuple[int, str]) -> tuple[int, int]:
+        score, block = item
+        is_code = _looks_like_code(block)
+        # Blocos com score: prioridade
         if score > 0:
-            scored.append((score, p))
+            return (-score, 0 if is_code else 1)
+        # Blocos de código sem score: incluir apenas se wants_code
+        if is_code and wants_code:
+            return (0, 0)
+        return (1, 1)  # Excluir (vai pro final)
 
-    if not scored:
-        return text[:max_chars] + ("..." if len(text) > max_chars else "")
-
-    scored.sort(key=lambda x: -x[0])
+    scored.sort(key=sort_key)
     out = []
     total = 0
 
-    for _, p in scored:
-        if total + len(p) > max_chars:
+    for score, block in scored:
+        if score == 0 and not (_looks_like_code(block) and wants_code):
+            continue
+        if total + len(block) > max_chars:
             break
-
-        out.append(p)
-        total += len(p)
+        out.append(block)
+        total += len(block)
 
     return "\n\n".join(out) if out else text[:max_chars] + ("..." if len(text) > max_chars else "")

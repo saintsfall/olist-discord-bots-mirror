@@ -1,7 +1,7 @@
 [project]
-name = "vnda-docs-mcp-server"
+name = "olist-docs-mcp-server"
 version = "0.1.0"
-description = "MCP Server que expõe tools de acesso à documentação developers.vnda.com.br (Opção A: fetch direto ao site)"
+description = "MCP Server que expõe tools de acesso à documentação developers.vnda.com.br (plataforma Olist e-commerce)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

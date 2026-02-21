@@ -1,6 +1,6 @@
-# Vnda Docs MCP Client (Orchestrator)
+# Olist Docs MCP Client (Orchestrator)
 
-Serviço HTTP que recebe perguntas de bots (hoje usado pelo bot Sebastião), conecta ao MCP Server (doc Vnda), usa OpenAI ChatGPT com as tools do MCP e devolve a resposta no contrato esperado. A pasta e o pacote `orchestrator` são genéricos para permitir que outros bots usem o mesmo recurso no futuro.
+Serviço HTTP que recebe perguntas de bots (hoje usado pelo bot Sebastião), conecta ao MCP Server (doc Olist), usa OpenAI ChatGPT com as tools do MCP e devolve a resposta no contrato esperado. A pasta e o pacote `orchestrator` são genéricos para permitir que outros bots usem o mesmo recurso no futuro.
 
 Pasta isolada: no Shard Cloud pode ser uma aplicação individual. Cada bot habilita ou desabilita o fluxo MCP via variável de ambiente (`ORCHESTRATOR_URL`); quando desabilitada, o bot segue o fluxo atual (ex.: N8N no caso do Sebastião).
 

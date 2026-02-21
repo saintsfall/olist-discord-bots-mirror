@@ -1,7 +1,7 @@
 [project]
-name = "vnda-docs-mcp-client"
+name = "olist-docs-mcp-client"
 version = "0.1.0"
-description = "Cliente/orquestrador: recebe perguntas de bots (ex.: Sebastião), usa MCP (doc Vnda) + OpenAI ChatGPT e devolve resposta. Reutilizável por outros bots; cada bot habilita via ORCHESTRATOR_URL."
+description = "Cliente/orquestrador: recebe perguntas de bots (ex.: Sebastião), usa MCP (doc Olist) + OpenAI ChatGPT e devolve resposta. Reutilizável por outros bots; cada bot habilita via ORCHESTRATOR_URL."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

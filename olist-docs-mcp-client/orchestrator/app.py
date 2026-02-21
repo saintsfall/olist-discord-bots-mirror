@@ -86,7 +86,7 @@ def _format_exception(e: BaseException) -> str:
     return repr(e)
 
 
-app = FastAPI(title="Vnda Docs MCP Orchestrator", version="0.1.0")
+app = FastAPI(title="Olist Docs MCP Orchestrator", version="0.1.0")
 
 
 class HistoryMessage(BaseModel):

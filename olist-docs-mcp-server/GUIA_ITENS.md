@@ -8,10 +8,10 @@ Este guia descreve o que foi feito e o que fazer em cada item do plano de substi
 
 **O que foi feito:**
 
-- Projeto `vnda-docs-mcp-server` na raiz do repo (ao lado de `discord-bot-sebastiao`).
+- Projeto `olist-docs-mcp-server` na raiz do repo (ao lado de `discord-bot-sebastiao`).
 - Duas tools no estilo Context7:
   - **list_docs_sections** – lista seções/URLs da doc via crawler da sidebar (cache 1h); fallback para lista estática se falhar (Search Library).
-  - **get_vnda_docs_context(query, max_pages=5)** – extrai slugs da query (ex.: load_banners, avise-me), prioriza essas páginas e busca por relevância. Fetch direto ao site developers.vnda.com.br, extração de texto com BeautifulSoup, retorno de snippets com URL (Get Context).
+  - **get_olist_docs_context(query, max_pages=5)** – extrai slugs da query (ex.: load_banners, avise-me), prioriza essas páginas e busca por relevância. Fetch direto ao site developers.vnda.com.br, extração de texto com BeautifulSoup, retorno de snippets com URL (Get Context).
 - Transporte: streamable-http na porta 8000.
 
 **O que você faz agora:**
@@ -19,7 +19,7 @@ Este guia descreve o que foi feito e o que fazer em cada item do plano de substi
 1. No terminal, entre na pasta do MCP Server e instale as dependências (use uv ou pip):
 
    ```bash
-   cd vnda-docs-mcp-server
+   cd olist-docs-mcp-server
    uv sync
    # ou: pip install "mcp[cli]" requests beautifulsoup4
    ```
@@ -27,8 +27,8 @@ Este guia descreve o que foi feito e o que fazer em cada item do plano de substi
 2. Suba o server:
 
    ```bash
-   uv run python -m vnda_docs_mcp_server
-   # ou: python -m vnda_docs_mcp_server
+   uv run python -m olist_docs_mcp_server
+   # ou: python -m olist_docs_mcp_server
    ```
 
    Deve aparecer algo como "Listening on..." na porta 8000. O endpoint MCP fica em `http://localhost:8000/mcp` (ou conforme a mensagem no terminal).
@@ -39,7 +39,7 @@ Este guia descreve o que foi feito e o que fazer em cada item do plano de substi
    npx -y @modelcontextprotocol/inspector
    ```
 
-   Na interface, conecte a `http://localhost:8000/mcp` e chame as tools `list_docs_sections` e `get_vnda_docs_context` com uma query (ex.: "como customizar loja").
+   Na interface, conecte a `http://localhost:8000/mcp` e chame as tools `list_docs_sections` e `get_olist_docs_context` com uma query (ex.: "como customizar loja").
 
 Quando o Item 1 estiver rodando e testado, avance para o **Item 2** (orquestrador).
 
@@ -47,7 +47,7 @@ Quando o Item 1 estiver rodando e testado, avance para o **Item 2** (orquestrado
 
 ## Item 2: Orquestrador (LLM + MCP client) – concluído
 
-**O que foi feito:** Projeto `vnda-docs-mcp-client/` na raiz do repo (pasta isolada; pacote `orchestrator` genérico para uso por vários bots, hoje pelo Sebastião).
+**O que foi feito:** Projeto `olist-docs-mcp-client/` na raiz do repo (pasta isolada; pacote `orchestrator` genérico para uso por vários bots, hoje pelo Sebastião).
 
 - **Stack:** Python, FastAPI, OpenAI (ChatGPT), MCP client (streamable HTTP) para falar com o MCP Server.
 - **Rotas:**
@@ -59,9 +59,9 @@ Quando o Item 1 estiver rodando e testado, avance para o **Item 2** (orquestrado
 
 **Como rodar localmente:**
 
-1. Subir o MCP Server: `cd vnda-docs-mcp-server && uv run python -m vnda_docs_mcp_server`
-2. Criar `.env` em `vnda-docs-mcp-client/` com `OPENAI_API_KEY` e `MCP_SERVER_URL=http://localhost:8000/mcp`
-3. Subir o orquestrador: `cd vnda-docs-mcp-client && uv sync && uv run uvicorn orchestrator.app:app --reload --port 4000`
+1. Subir o MCP Server: `cd olist-docs-mcp-server && uv run python -m olist_docs_mcp_server`
+2. Criar `.env` em `olist-docs-mcp-client/` com `OPENAI_API_KEY` e `MCP_SERVER_URL=http://localhost:8000/mcp`
+3. Subir o orquestrador: `cd olist-docs-mcp-client && uv sync && uv run uvicorn orchestrator.app:app --reload --port 4000`
 4. Testar: `curl -X POST http://localhost:4000/answer -H "Content-Type: application/json" -d '{"message":"como customizar loja?","discord":{},"author":{}}'`
 
 ---
