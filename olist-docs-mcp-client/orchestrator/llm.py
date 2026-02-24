@@ -112,6 +112,7 @@ async def answer_with_mcp(
             messages=messages,
             tools=OPENAI_TOOLS,
             tool_choice="auto",
+            max_tokens=8192,
         )
         choice = response.choices[0]
         msg = choice.message

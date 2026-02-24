@@ -30,8 +30,60 @@ uv run uvicorn orchestrator.app:app --reload --port 4000
 2. Conecta ao MCP via streamable-http e chama `answer_with_mcp` (loop de tool calls com OpenAI).
 3. Se a resposta for longa (> 2000 chars), divide em preview + attachment_content.
 
+## Testes
+
+Instale as dependências de desenvolvimento e rode os testes:
+
+```bash
+uv sync --extra dev
+uv run pytest
+```
+
+### Variações úteis
+
+- **Saída detalhada (nome de cada teste):**
+  ```bash
+  uv run pytest -v
+  ```
+
+- **Apenas um arquivo de teste:**
+  ```bash
+  uv run pytest tests/test_prompts.py -v
+  ```
+
+- **Apenas testes cujo nome contém uma palavra:**
+  ```bash
+  uv run pytest -v -k "prompt"
+  ```
+
+- **Listar testes sem executar:**
+  ```bash
+  uv run pytest --collect-only
+  ```
+
+### Relatório Allure
+
+Para gerar relatórios visuais com Allure:
+
+1. Instale o Allure CLI no sistema (uma vez):
+   - **macOS:** `brew install allure`
+   - **npm:** `npm install -g allure-commandline`
+
+2. Rode os testes gerando dados para o Allure:
+   ```bash
+  uv run pytest --alluredir=allure-results
+   ```
+
+3. Abra o relatório no navegador:
+   ```bash
+  allure serve allure-results
+   ```
+
+Os testes em `tests/` validam principalmente o prompt (regressão das instruções anti-omissão de código).
+
 ## Estrutura
 
 - `orchestrator/app.py` – FastAPI app, rota `/answer`, guardrails e preparação de content/attachment.
 - `orchestrator/llm.py` – Integração OpenAI + MCP (loop de tool calls).
 - `orchestrator/prompts.py` – System prompt e diretrizes.
+- `tests/` – Testes (pytest); inclui regressão do conteúdo do prompt.

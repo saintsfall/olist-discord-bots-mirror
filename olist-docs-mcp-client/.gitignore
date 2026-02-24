@@ -3,3 +3,7 @@ __pycache__/
 .env
 *.egg-info/
 dist/
+
+# Allure
+allure-results/
+allure-report/
