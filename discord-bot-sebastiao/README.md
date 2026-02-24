@@ -39,11 +39,17 @@ Isso irá:
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
+# Modo MCP (recomendado): define para usar o orquestrador em vez do N8N
+ORCHESTRATOR_URL=http://localhost:4000
+
+# Modo N8N (legado): usado quando ORCHESTRATOR_URL não está definida
 N8N_WEBHOOK_URL=seu-webhook-n8n-aqui
 DISCORD_WEBHOOK=seu-webhook-discord-aqui
 
 DISCORD_TOKEN=seu-token-discord-aqui # Sebastião Bot
 ```
+
+O bot usa o orquestrador (MCP) se `ORCHESTRATOR_URL` estiver definida; caso contrário, usa o N8N.
 
 ## Executando o Bot
 
@@ -109,6 +115,44 @@ uv sync --upgrade
 ```bash
 uv pip list
 ```
+
+## Testes
+
+Instale as dependências de desenvolvimento e rode os testes:
+
+```bash
+uv sync --extra dev
+uv run pytest
+```
+
+Para rodar com saída detalhada:
+
+```bash
+uv run pytest -v
+```
+
+### Relatório Allure
+
+Para gerar relatórios visuais dos testes, use o Allure:
+
+1. Instale o Allure CLI (uma vez no sistema):
+
+   - **macOS:** `brew install allure`
+   - **npm:** `npm install -g allure-commandline`
+
+2. Rode os testes gerando dados para o Allure:
+
+```bash
+uv run pytest --alluredir=allure-results
+```
+
+3. Abra o relatório no navegador:
+
+```bash
+allure serve allure-results
+```
+
+O Allure exibirá um relatório interativo com detalhes de cada teste, duração e resultados.
 
 ## Estrutura do Projeto
 

@@ -133,7 +133,7 @@ def register_reindex_commands(bot: commands.Bot) -> None:
                 field_value += f"**Resposta:** {response_preview}"
 
             embed.add_field(
-                name=f"ID: `{req['request_id'][:8]}...`",
+                name=f"ID: `{req['request_id']}`",
                 value=field_value,
                 inline=False
             )

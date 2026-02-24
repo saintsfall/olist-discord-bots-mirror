@@ -1,0 +1,5 @@
+# IDE
+.vscode/
+
+# Testes
+.pytest_cache/
