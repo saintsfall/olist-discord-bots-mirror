@@ -66,3 +66,49 @@ def mock_bot(mock_thread):
     bot.get_channel = MagicMock(return_value=mock_thread)
     bot.fetch_channel = AsyncMock(return_value=mock_thread)
     return bot
+
+
+# --- Fixtures para testes do script export_db ---
+import sqlite3
+from pathlib import Path
+
+THREADS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS threads (
+    thread_id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    message_id INTEGER NOT NULL,
+    iteration_count INTEGER NOT NULL,
+    status TEXT DEFAULT 'pending',
+    closed_at REAL
+)
+"""
+
+
+@pytest.fixture
+def temp_db(tmp_path):
+    """Banco SQLite temporário com a tabela threads."""
+    db_path = tmp_path / "threads.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(THREADS_SCHEMA)
+    conn.commit()
+    conn.close()
+    return db_path
+
+
+@pytest.fixture
+def temp_db_with_data(temp_db):
+    """Banco com uma linha na tabela threads."""
+    conn = sqlite3.connect(temp_db)
+    conn.execute(
+        "INSERT INTO threads (thread_id, user_id, message_id, iteration_count, status) VALUES (?, ?, ?, ?, ?)",
+        ("111", 12345, 999, 1, "pending"),
+    )
+    conn.commit()
+    conn.close()
+    return temp_db
+
+
+@pytest.fixture
+def project_root():
+    """Raiz do projeto discord-bot-sebastiao."""
+    return Path(__file__).resolve().parent.parent

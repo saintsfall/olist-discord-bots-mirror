@@ -48,6 +48,10 @@ Thumbs.db
 # UV
 .uv/
 
+# Database
+*.db
+threads.db
+
 # Allure
 allure-results/
 allure-report/

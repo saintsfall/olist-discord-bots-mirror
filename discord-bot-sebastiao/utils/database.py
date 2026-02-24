@@ -1,10 +1,11 @@
 from pathlib import Path
+import os
 import sqlite3
 from typing import Optional, Dict
 from datetime import datetime, timedelta
 import contextlib
 
-DB_FILE = Path("threads.db")
+DB_FILE = Path(os.getenv("BOT_DB_PATH", "threads.db"))
 DB_TIMEOUT = 5.0  # Timeout de 5 segundos para evitar locks
 
 @contextlib.contextmanager

@@ -51,6 +51,29 @@ DISCORD_TOKEN=seu-token-discord-aqui # Sebastião Bot
 
 O bot usa o orquestrador (MCP) se `ORCHESTRATOR_URL` estiver definida; caso contrário, usa o N8N.
 
+- **BOT_DB_PATH** (opcional): caminho do arquivo do banco SQLite de threads. Padrão: `threads.db` no diretório atual. Útil em ambientes com volume persistente.
+
+## Banco de dados
+
+O bot usa apenas **SQLite** para controlar threads (solicitações e interações). O arquivo do banco não deve ser commitado (está no `.gitignore`).
+
+### Visualização local
+
+Com o banco no seu ambiente (`threads.db` ou o caminho em `BOT_DB_PATH`), abra o arquivo com [DB Browser for SQLite](https://sqlitebrowser.org/) (ou similar).
+
+### Export para JSON/CSV
+
+**Script** (a partir da raiz do projeto):
+
+```bash
+python scripts/export_db.py
+python scripts/export_db.py --output ./backups
+python scripts/export_db.py --json-only -o ./out
+python scripts/export_db.py --csv-only -o ./out
+```
+
+**Comando no Discord** (Moderator ou Admin): `/db_export` — escolha JSON ou CSV e receba o arquivo como anexo (ephemeral).
+
 ## Executando o Bot
 
 ### Opção 1: Usando uv run (recomendado)
@@ -122,7 +145,7 @@ Instale as dependências de desenvolvimento e rode os testes:
 
 ```bash
 uv sync --extra dev
-uv run pytest
+uv run pytest tests/ -v
 ```
 
 Para rodar com saída detalhada:

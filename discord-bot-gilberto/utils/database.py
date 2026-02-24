@@ -3,8 +3,12 @@ import sqlite3
 from typing import Optional, Dict
 from datetime import datetime, timedelta
 import contextlib
+import os
+from dotenv import load_dotenv
 
-DB_FILE = Path("bot_data.db")
+load_dotenv()
+
+DB_FILE = Path(os.getenv("BOT_DB_PATH", "bot_data.db"))
 DB_TIMEOUT = 5.0  # Timeout de 5 segundos para evitar locks
 
 

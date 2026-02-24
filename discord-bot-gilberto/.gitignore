@@ -48,3 +48,11 @@ Thumbs.db
 # UV
 .uv/
 
+# Database
+*.db
+bot_data.db
+
+# Allure (pytest)
+allure-results/
+allure-report/
+
